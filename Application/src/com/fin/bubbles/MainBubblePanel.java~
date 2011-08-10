@@ -1,0 +1,266 @@
+//Copyright (c) 2011 Michael D. Hooper
+//Released under MIT License
+
+
+package com.fin.bubbles;
+
+import bubble_model.Bubble;
+import velocity.Speed;
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+
+/**
+ * @author Mike Hooper
+ * Handles screen touch events and draws images to the screen
+ */
+public class MainBubblePanel extends SurfaceView implements
+		SurfaceHolder.Callback {
+
+	private static final String TAG = MainBubblePanel.class.getSimpleName();
+	
+	private MainThread thread;
+	private Bubble main_bubble;
+	private Bubble second_bubble;
+	private Bubble needles;
+	private Bubble lock_bubble;
+	private Bubble key;
+
+	public MainBubblePanel(Context context) {
+		
+		super(context);
+		// adding the callback (this) to the surface holder to intercept events
+		getHolder().addCallback(this);
+		// create bubble and load bitmap
+		main_bubble = new Bubble(BitmapFactory.decodeResource(getResources(), R.drawable.bubble_1), 50, 50);
+		second_bubble = null;
+		needles = new Bubble(BitmapFactory.decodeResource(getResources(), R.drawable.needle_ball), 460, 25);
+		key = new Bubble(BitmapFactory.decodeResource(getResources(), R.drawable.white_key), 50, 290);
+		lock_bubble = new Bubble(BitmapFactory.decodeResource(getResources(), R.drawable.lock_bubble), 25, 25);
+		// create the game loop thread
+		thread = new MainThread(getHolder(), this);
+		
+		// make the GamePanel focusable so it can handle events
+		setFocusable(true);
+	}
+	public void bubble_launcher() {
+		if(second_bubble == null)
+			second_bubble = new Bubble(BitmapFactory.decodeResource(getResources(), R.drawable.bubble_1), 50, 50);
+		else if(main_bubble == null)
+			main_bubble = new Bubble(BitmapFactory.decodeResource(getResources(), R.drawable.bubble_1), 50, 50);
+
+	}
+	
+		
+		
+
+
+	@Override
+	public void surfaceChanged(SurfaceHolder holder, int format, int width,
+			int height) {
+	}
+
+	@Override
+	public void surfaceCreated(SurfaceHolder holder) {
+		// at this point the surface is created and
+		// we can safely start the game loop
+		thread.setRunning(true);
+		thread.start();
+	}
+
+	@Override
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		Log.d(TAG, "Surface is being destroyed");
+		// tell the thread to shut down and wait for it to finish
+		// this is a clean shutdown
+		boolean retry = true;
+		while (retry) {
+			try {
+				thread.join();
+				retry = false;
+			} catch (InterruptedException e) {
+				// try again shutting down the thread
+			}
+		}
+		Log.d(TAG, "Thread was shut down cleanly");
+	}
+	
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			// delegating event handling to the droid
+			if(second_bubble != null)
+			{
+				second_bubble.handleActionDown((int)event.getX(), (int)event.getY());
+			}
+			if(main_bubble != null)
+			{
+				main_bubble.handleActionDown((int)event.getX(), (int)event.getY());
+			}
+			
+			
+		}
+
+	if (event.getAction() == MotionEvent.ACTION_MOVE) {
+			// the gestures
+			
+			if(second_bubble != null){
+			if (second_bubble.isTouched()) {
+				// the bubble was picked up and is being dragged
+				second_bubble.setX((int)event.getX());
+				second_bubble.setY((int)event.getY());
+				
+			}
+			}
+			if(main_bubble != null){
+				if (main_bubble.isTouched()) {
+					// the bubble was picked up and is being dragged
+					main_bubble.setX((int)event.getX());
+					main_bubble.setY((int)event.getY());
+					
+				}
+			}
+		} //
+		if (event.getAction() == MotionEvent.ACTION_UP) {
+			// touch was released
+			
+			if(second_bubble != null){
+			if (second_bubble.isTouched()) {
+				
+				second_bubble.setTouched(false);
+			}
+			}
+			if(main_bubble != null){
+				if (main_bubble.isTouched()) {
+					
+					main_bubble.setTouched(false);
+				}
+			}
+		}
+		return true;
+	}
+
+	public void render(Canvas canvas) {
+		canvas.drawColor(Color.BLACK);
+		if(main_bubble != null)
+		{
+			main_bubble.draw(canvas);
+			
+		}
+		if(second_bubble != null)
+		{
+			second_bubble.draw(canvas);
+		}
+		key.draw(canvas);
+		if(main_bubble != null ^ second_bubble != null)
+			lock_bubble.draw(canvas);
+		needles.draw(canvas);
+	
+		
+		
+	}
+
+	/**
+	 * This is the bubble update method. It updates and redraws objects positions (new positions if they have 
+	 * been moved.
+	 */
+	public void update() {
+		
+		
+		if(main_bubble != null)
+		{
+			if(main_bubble.getX() >= 430 && main_bubble.getY() <= 65)
+			{
+				main_bubble = null;
+			}
+			else if(main_bubble.getX() <= 75 && main_bubble.getY() >= 290 && second_bubble == null)
+			{
+				bubble_launcher();
+			}
+			if(main_bubble == null && second_bubble == null)
+			{
+				thread.setRunning(false);
+				((Activity)getContext()).finish();
+			}
+		}
+		if(main_bubble != null)
+		{
+		// check collision with right wall if heading right
+		if (main_bubble.getSpeed().getxDirection() == Speed.DIRECTION_RIGHT
+				&& main_bubble.getX() + main_bubble.getBitmap().getWidth() / 2 >= getWidth()) {
+			main_bubble.getSpeed().toggleXDirection();
+		}
+		// check collision with left wall if heading left
+		if (main_bubble.getSpeed().getxDirection() == Speed.DIRECTION_LEFT
+				&& main_bubble.getX() - main_bubble.getBitmap().getWidth() / 2 <= 0) {
+			main_bubble.getSpeed().toggleXDirection();
+		}
+		// check collision with bottom wall if heading down
+		if (main_bubble.getSpeed().getyDirection() == Speed.DIRECTION_DOWN
+				&& main_bubble.getY() + main_bubble.getBitmap().getHeight() / 2 >= getHeight()) {
+			main_bubble.getSpeed().toggleYDirection();
+		}
+		// check collision with top wall if heading up
+		if (main_bubble.getSpeed().getyDirection() == Speed.DIRECTION_UP
+				&& main_bubble.getY() - main_bubble.getBitmap().getHeight() / 2 <= 0) {
+			main_bubble.getSpeed().toggleYDirection();
+		}
+		// Update the lone droid
+		main_bubble.update();
+		}
+	
+	// check collision with right wall if heading right
+	if(second_bubble != null){
+		if(second_bubble.getX() >= 430 && second_bubble.getY() <= 70)
+		{
+			second_bubble = null;
+		}		
+		else if(second_bubble.getX() <= 75 && second_bubble.getY() >= 290 && main_bubble == null)
+		{
+			bubble_launcher();
+		}
+		if(main_bubble == null && second_bubble == null)
+		{
+			thread.setRunning(false);
+			((Activity)getContext()).finish();
+		}
+	}
+	if(second_bubble != null){
+	if (second_bubble.getSpeed().getxDirection() == Speed.DIRECTION_RIGHT
+			&& second_bubble.getX() + second_bubble.getBitmap().getWidth() / 2 >= getWidth()) {
+		second_bubble.getSpeed().toggleXDirection();
+	}
+	// check collision with left wall if heading left
+	if (second_bubble.getSpeed().getxDirection() == Speed.DIRECTION_LEFT
+			&& second_bubble.getX() - second_bubble.getBitmap().getWidth() / 2 <= 0) {
+		second_bubble.getSpeed().toggleXDirection();
+	}
+	// check collision with bottom wall if heading down
+	if (second_bubble.getSpeed().getyDirection() == Speed.DIRECTION_DOWN
+			&& second_bubble.getY() + second_bubble.getBitmap().getHeight() / 2 >= getHeight()) {
+		second_bubble.getSpeed().toggleYDirection();
+	}
+	// check collision with top wall if heading up
+	if (second_bubble.getSpeed().getyDirection() == Speed.DIRECTION_UP
+			&& second_bubble.getY() - second_bubble.getBitmap().getHeight() / 2 <= 0) {
+		second_bubble.getSpeed().toggleYDirection();
+	}
+		
+		if(second_bubble.getX() <= 75 && second_bubble.getY() >= 290 && lock_bubble != null && main_bubble == null)
+		{
+			bubble_launcher();
+		}
+	/*check collissions with first bubble*/
+	
+	// Update the lone droid
+	
+	second_bubble.update();
+	}
+	}
+}
