@@ -1,0 +1,15 @@
+Bubble App
+An Android App by mooper
+Copyright © 2011 Michael D. Hooper 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Source code released under the MIT License            !
+! (http://www.opensource.org/licenses/mit-license.php)  !
+! "Source code" means all .java and .xml files.         !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Artwork is beta, images taken from google image search, soon to be replaced by my own artwork.  Please change the artwork if you are going to copy or redistribute any part of this application.
+
+Programming and Project Lead, Michael D. Hooper AKA mooper 
+Github page: https://github.com/mooper/
+Email:       mooper.hooper@gmail.com
