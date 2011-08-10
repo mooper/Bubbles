@@ -15,5 +15,5 @@ This is an android application, it is very simple.  When you run it, it has a bu
 
 
 Building the Project
-1. git@github.com:mooper/Bubbles.git
+1. git clone git@github.com:mooper/Bubbles.git
 2. import into eclipse or your favorite IDE
